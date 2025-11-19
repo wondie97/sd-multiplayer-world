@@ -1,3 +1,4 @@
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -8,14 +9,14 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-// 광장(플라자) 정보: 모든 로그인 유저가 들어오는 기본 맵
+// 광장(플라자) 기본 상태
 const plaza = {
-  mapId: "village", // 기본 맵은 마을 광장
-  players: {}       // socketId -> player
+  mapId: "village",
+  players: {} // socketId -> {id,userId,name,x,y,facing,state}
 };
 
-// 방 정보 (끝말잇기, 미니게임 등)
-const rooms = {}; // roomId -> { id, name, players: {socketId: true}, wordGame: {...} }
+// 방 목록
+const rooms = {}; // roomId -> { id,name,players:{socketId:true},wordGame:{...} }
 
 function makeUserId() {
   return "U" + Math.random().toString(36).slice(2, 7).toUpperCase();
@@ -29,52 +30,52 @@ function serializePlaza() {
 }
 
 function serializeRooms() {
-  const list = [];
-  for (const id in rooms) {
-    const r = rooms[id];
-    list.push({
-      id: r.id,
-      name: r.name,
-      playerCount: Object.keys(r.players).length,
-      isActive: r.wordGame.isActive
-    });
-  }
-  return list;
+  return Object.values(rooms).map(r => ({
+    id: r.id,
+    name: r.name,
+    playerCount: Object.keys(r.players).length,
+    isActive: r.wordGame.isActive
+  }));
 }
 
 function serializeRoom(room) {
+  const wg = room.wordGame;
   return {
     id: room.id,
     name: room.name,
     players: Object.keys(room.players),
     wordGame: {
-      isActive: room.wordGame.isActive,
-      currentTurnId: room.wordGame.turnOrder[room.wordGame.currentTurnIndex] || null,
-      lastWord: room.wordGame.lastWord,
-      usedCount: room.wordGame.usedWords.length
+      isActive: wg.isActive,
+      currentTurnId: wg.turnOrder[wg.currentTurnIndex] || null,
+      lastWord: wg.lastWord,
+      usedCount: wg.usedWords.length,
+      scores: wg.scores,
+      round: wg.round,
+      maxRounds: wg.maxRounds,
+      turnDeadline: wg.turnDeadline
     }
   };
 }
 
+// 임시 한국어 단어 검증 (2글자 이상, 한글만)
+function isValidKoreanWord(word) {
+  return /^[가-힣]{2,}$/.test(word);
+}
+
 io.on("connection", (socket) => {
   console.log("connected:", socket.id);
-  socket.data.user = null;  // { socketId, userId, name }
+  socket.data.user = null;
   socket.data.roomId = null;
 
   // 로그인
   socket.on("login", (nameRaw) => {
-    if (socket.data.user) return; // 이미 로그인
+    if (socket.data.user) return;
     let name = (nameRaw || "").toString().trim();
     if (!name) name = "손님";
     const userId = makeUserId();
 
-    socket.data.user = {
-      socketId: socket.id,
-      userId,
-      name
-    };
+    socket.data.user = { socketId: socket.id, userId, name };
 
-    // 광장 플레이어 등록
     plaza.players[socket.id] = {
       id: socket.id,
       userId,
@@ -86,7 +87,6 @@ io.on("connection", (socket) => {
     };
     socket.join("plaza");
 
-    // 로그인 성공 정보 전송
     socket.emit("loginSuccess", {
       selfId: socket.id,
       userId,
@@ -95,16 +95,11 @@ io.on("connection", (socket) => {
       rooms: serializeRooms()
     });
 
-    // 다른 사람에게 새 플레이어 알림
     socket.to("plaza").emit("plazaJoin", plaza.players[socket.id]);
-
-    console.log("login:", name, userId);
   });
 
   // 광장 이동
   socket.on("plazaMove", ({ x, y, facing, state }) => {
-    const user = socket.data.user;
-    if (!user) return;
     const p = plaza.players[socket.id];
     if (!p) return;
     if (typeof x === "number") p.x = x;
@@ -120,7 +115,6 @@ io.on("connection", (socket) => {
     if (!user) return;
     const msg = (text || "").toString().trim();
     if (!msg) return;
-
     io.to("plaza").emit("plazaChat", {
       id: socket.id,
       userId: user.userId,
@@ -138,23 +132,25 @@ io.on("connection", (socket) => {
     const room = {
       id: roomId,
       name: (name && name.trim()) ? name.trim() : "무제 방",
-      players: {},  // socketId -> true
+      players: {},
       wordGame: {
         isActive: false,
         turnOrder: [],
         currentTurnIndex: 0,
         lastWord: null,
-        usedWords: []
+        usedWords: [],
+        scores: {},
+        round: 0,
+        maxRounds: 3,
+        turnDeadline: null
       }
     };
     rooms[roomId] = room;
-
-    // 방 입장
     joinRoom(socket, roomId);
     io.emit("roomList", serializeRooms());
   });
 
-  // 방 입장
+  // 방 입장 / 나가기
   socket.on("joinRoom", (roomId) => {
     const user = socket.data.user;
     if (!user) return;
@@ -162,20 +158,18 @@ io.on("connection", (socket) => {
     io.emit("roomList", serializeRooms());
   });
 
-  // 방 나가기
   socket.on("leaveRoom", () => {
     leaveCurrentRoom(socket);
     io.emit("roomList", serializeRooms());
   });
 
-  // 방 채팅 (지금은 끝말잇기 로그용 정도로 사용)
+  // 방 채팅
   socket.on("roomChat", ({ roomId, text }) => {
     const user = socket.data.user;
     if (!user) return;
     const room = rooms[roomId];
     if (!room) return;
     if (!room.players[socket.id]) return;
-
     const msg = (text || "").toString().trim();
     if (!msg) return;
 
@@ -191,73 +185,81 @@ io.on("connection", (socket) => {
 
   // 끝말잇기 시작
   socket.on("startWordGame", ({ roomId }) => {
-    const user = socket.data.user;
-    if (!user) return;
     const room = rooms[roomId];
-    if (!room) return;
+    const user = socket.data.user;
+    if (!room || !user) return;
     if (!room.players[socket.id]) return;
 
     const game = room.wordGame;
-    const playerIds = Object.keys(room.players);
+    const ids = Object.keys(room.players);
     if (game.isActive) {
-      socket.emit("wordGameSystem", { roomId, msg: "이미 게임이 진행 중입니다." });
+      socket.emit("wordGameSystem", { roomId, msg: "이미 진행 중입니다." });
       return;
     }
-    if (playerIds.length < 2) {
-      socket.emit("wordGameSystem", { roomId, msg: "2명 이상일 때 시작할 수 있습니다." });
+    if (ids.length < 2) {
+      socket.emit("wordGameSystem", { roomId, msg: "2명 이상 필요합니다." });
       return;
     }
 
     game.isActive = true;
-    game.turnOrder = playerIds;
+    game.turnOrder = ids;
     game.currentTurnIndex = 0;
     game.lastWord = null;
     game.usedWords = [];
+    game.scores = {};
+    ids.forEach(id => game.scores[id] = 0);
+    game.round = 1;
+    game.maxRounds = 3;
+    game.turnDeadline = Date.now() + 15000;
 
-    io.to(roomId).emit("wordGameStarted", {
-      roomId,
-      turnOrder: game.turnOrder,
-      currentTurnId: game.turnOrder[0]
-    });
-    io.to(roomId).emit("wordGameSystem", {
-      roomId,
-      msg: "끝말잇기 시작! 첫 번째 플레이어부터 단어를 입력하세요."
-    });
+    io.to(roomId).emit("wordGameStarted", { roomId, state: serializeRoom(room) });
+    io.to(roomId).emit("wordGameSystem", { roomId, msg: "끝말잇기 시작!" });
   });
 
-  // 방에서 단어 제출
+  // 단어 제출
   socket.on("submitWord", ({ roomId, word }) => {
-    const user = socket.data.user;
-    if (!user) return;
     const room = rooms[roomId];
-    if (!room) return;
+    const user = socket.data.user;
+    if (!room || !user) return;
     if (!room.players[socket.id]) return;
     const game = room.wordGame;
-
     if (!game.isActive) {
-      socket.emit("wordGameSystem", { roomId, msg: "아직 끝말잇기가 시작되지 않았습니다." });
+      socket.emit("wordGameSystem", { roomId, msg: "아직 시작되지 않음." });
+      return;
+    }
+
+    const now = Date.now();
+    if (game.turnDeadline && now > game.turnDeadline) {
+      io.to(roomId).emit("wordGameSystem", { roomId, msg: "시간 초과! 라운드 종료." });
+      endRound(roomId, "시간 초과");
       return;
     }
 
     const currentId = game.turnOrder[game.currentTurnIndex];
     if (socket.id !== currentId) {
-      socket.emit("wordGameSystem", { roomId, msg: "당신의 차례가 아닙니다." });
+      socket.emit("wordGameSystem", { roomId, msg: "당신 차례가 아닙니다." });
       return;
     }
 
     word = (word || "").toString().trim();
     if (!word) {
-      socket.emit("wordGameSystem", { roomId, msg: "공백 단어는 사용할 수 없습니다." });
+      socket.emit("wordGameSystem", { roomId, msg: "공백 단어는 안됩니다." });
       return;
+    }
+
+    if (!isValidKoreanWord(word)) {
+      io.to(roomId).emit("wordGameSystem", {
+        roomId,
+        msg: `${user.name} 님의 단어(${word})는 사전에 없는 것으로 처리됩니다.`
+      });
     }
 
     if (game.usedWords.includes(word)) {
       io.to(roomId).emit("wordGameSystem", {
         roomId,
-        msg: `${user.name} 님이 이미 나온 단어(${word})를 사용해서 탈락!`
+        msg: `${user.name} 님이 이미 나온 단어(${word})를 사용해 라운드 종료!`
       });
-      game.isActive = false;
-      io.to(roomId).emit("wordGameEnded", { roomId, reason: "중복 단어 사용" });
+      endRound(roomId, "중복 단어");
       return;
     }
 
@@ -267,55 +269,78 @@ io.on("connection", (socket) => {
       if (lastChar !== firstChar) {
         io.to(roomId).emit("wordGameSystem", {
           roomId,
-          msg: `${user.name} 님이 규칙 위반(${word})으로 탈락!`
+          msg: `${user.name} 님이 규칙 위반(${word})으로 라운드 종료!`
         });
-        game.isActive = false;
-        io.to(roomId).emit("wordGameEnded", { roomId, reason: "끝말잇기 규칙 위반" });
+        endRound(roomId, "규칙 위반");
         return;
       }
     }
 
+    // 정상 단어
     game.lastWord = word;
     game.usedWords.push(word);
+    const gained = word.length * 10;
+    game.scores[socket.id] = (game.scores[socket.id] || 0) + gained;
 
     io.to(roomId).emit("wordSubmitted", {
       roomId,
       id: socket.id,
       userId: user.userId,
       name: user.name,
-      word
+      word,
+      gained,
+      totalScore: game.scores[socket.id]
     });
 
+    // 턴/라운드 진행
     game.currentTurnIndex = (game.currentTurnIndex + 1) % game.turnOrder.length;
-    const nextId = game.turnOrder[game.currentTurnIndex];
-    io.to(roomId).emit("wordGameTurn", {
-      roomId,
-      currentTurnId: nextId
-    });
+    if (game.currentTurnIndex === 0) {
+      game.round += 1;
+      if (game.round > game.maxRounds) {
+        endRound(roomId, "라운드 종료");
+        return;
+      }
+    }
+    game.turnDeadline = Date.now() + 15000;
+    io.to(roomId).emit("wordGameTurn", { roomId, state: serializeRoom(room) });
   });
 
   socket.on("disconnect", () => {
-    console.log("disconnected:", socket.id);
-    // 광장에서 제거
     delete plaza.players[socket.id];
     socket.leave("plaza");
-
-    // 방에서 제거
     leaveCurrentRoom(socket);
     io.emit("roomList", serializeRooms());
-
-    // 광장에 나간 것 알리기
     io.to("plaza").emit("plazaLeave", { id: socket.id });
   });
 });
 
+function endRound(roomId, reason) {
+  const room = rooms[roomId];
+  if (!room) return;
+  const game = room.wordGame;
+  game.isActive = false;
+
+  let bestId = null;
+  let bestScore = -1;
+  for (const pid in game.scores) {
+    if (game.scores[pid] > bestScore) {
+      bestScore = game.scores[pid];
+      bestId = pid;
+    }
+  }
+
+  io.to(roomId).emit("wordGameEnded", {
+    roomId,
+    reason,
+    winnerId: bestId,
+    scores: game.scores
+  });
+}
+
 function joinRoom(socket, roomId) {
-  const user = socket.data.user;
-  if (!user) return;
   const room = rooms[roomId];
   if (!room) return;
 
-  // 기존 방 나가기
   if (socket.data.roomId && socket.data.roomId !== roomId) {
     leaveCurrentRoom(socket);
   }
@@ -336,7 +361,6 @@ function leaveCurrentRoom(socket) {
     socket.data.roomId = null;
     return;
   }
-
   delete room.players[socket.id];
   socket.leave(roomId);
   socket.data.roomId = null;
@@ -350,5 +374,5 @@ function leaveCurrentRoom(socket) {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log("Server listening on http://localhost:" + PORT);
+  console.log("Server running on http://localhost:" + PORT);
 });

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,175 +10,92 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       height: 100vh;
       display: flex;
-      background: linear-gradient(135deg, #f6fbff 0%, #e2f2ff 40%, #ffeef6 100%);
-      color: #334155;
+      background: linear-gradient(135deg,#fef9c3 0%,#e0f2fe 40%,#fee2f2 100%);
+      color: #111827;
       overflow: hidden;
     }
-    #game-container {
-      flex: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+    #game-container{
+      flex:2.2;display:flex;align-items:center;justify-content:center;padding:16px;
     }
-    canvas {
-      border-radius: 16px;
-      border: 2px solid #c4d9ff;
-      background: #f3f6ff;
-      box-shadow: 0 12px 32px rgba(148, 163, 255, 0.35);
+    canvas{
+      border-radius:18px;border:2px solid #bfdbfe;background:#f8fafc;
+      box-shadow:0 12px 32px rgba(148,163,255,.4);
     }
-    #ui {
-      flex: 1.2;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      gap: 10px;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(10px);
-      border-left: 1px solid #e2e8f0;
+    #ui{
+      flex:1.1;display:flex;flex-direction:column;padding:14px 16px;gap:10px;
+      background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+      border-left:1px solid #e5e7eb;
     }
-    h1 {
-      font-size: 20px;
-      margin-bottom: 4px;
-      color: #1e293b;
+    h1{font-size:20px;margin-bottom:4px;color:#0f172a;}
+    .sub{font-size:11px;color:#6b7280;}
+    #player-info{margin-top:4px;font-size:12px;color:#4b5563;}
+    #top-nav{display:flex;justify-content:flex-end;gap:6px;margin-top:6px;}
+    #top-nav button{
+      border-radius:999px;padding:4px 10px;font-size:11px;border:1px solid #d1d5db;
+      background:#f3f4ff;color:#4b5563;cursor:pointer;
     }
-    .sub {
-      font-size: 11px;
-      color: #64748b;
+    #top-nav button.active{
+      background:linear-gradient(135deg,#60a5fa,#a855f7);
+      color:#fff;border-color:transparent;
+      box-shadow:0 4px 10px rgba(59,130,246,.35);
     }
-    .section {
-      background: #f8fafc;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      padding: 10px 12px;
+    .view{display:none;flex:1;min-height:0;}
+    .view.active{display:block;}
+    .panel{
+      background:#f9fafb;border-radius:12px;border:1px solid #e5e7eb;
+      padding:10px 12px;height:100%;display:flex;flex-direction:column;gap:6px;
     }
-    .section h2 {
-      font-size: 14px;
-      margin-bottom: 6px;
-      color: #1f2937;
+    .panel h2{font-size:14px;color:#111827;}
+    label{display:block;font-size:12px;margin-top:4px;margin-bottom:2px;color:#4b5563;}
+    input,textarea{
+      width:100%;border-radius:8px;border:1px solid #d1d5db;background:#fff;
+      color:#111827;padding:5px 8px;font-size:12px;
     }
-    #player-info {
-      font-size: 12px;
-      color: #4b5563;
-      margin-top: 4px;
+    textarea{resize:none;}
+    button.primary{
+      margin-top:6px;width:100%;border-radius:999px;border:none;padding:6px 10px;
+      font-size:13px;cursor:pointer;background:linear-gradient(135deg,#60a5fa,#a855f7);
+      color:#fff;font-weight:600;box-shadow:0 6px 16px rgba(59,130,246,.35);
     }
-    label {
-      display: block;
-      font-size: 12px;
-      margin-top: 4px;
-      margin-bottom: 2px;
-      color: #475569;
+    button.ghost{
+      border-radius:999px;border:1px solid #fecaca;background:transparent;
+      color:#b91c1c;font-size:11px;padding:4px 8px;cursor:pointer;
     }
-    input, select, textarea {
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid #cbd5f5;
-      background: #ffffff;
-      color: #0f172a;
-      padding: 5px 8px;
-      font-size: 12px;
+    #plaza-chat,#room-log{
+      flex:1;overflow-y:auto;background:#f3f4ff;border-radius:8px;
+      border:1px solid #e5e7eb;padding:6px;font-size:12px;
     }
-    textarea {
-      resize: none;
+    #plaza-chat p,#room-log p{margin-bottom:3px;}
+    #rooms-list{max-height:100px;overflow-y:auto;}
+    #rooms-list button{
+      width:100%;border-radius:8px;border:1px solid #bfdbfe;background:#e0f2fe;
+      padding:5px 8px;text-align:left;font-size:12px;margin-bottom:4px;
+      color:#0f172a;cursor:pointer;
     }
-    button {
-      border-radius: 999px;
-      border: none;
-      padding: 6px 10px;
-      font-size: 13px;
-      cursor: pointer;
+    #rooms-list button span{font-size:11px;color:#6b7280;margin-left:4px;}
+    #login-screen{
+      position:fixed;inset:0;background:linear-gradient(135deg,#e0f2fe,#fee2f2);
+      display:flex;align-items:center;justify-content:center;z-index:20;
     }
-    button.primary {
-      width: 100%;
-      background: linear-gradient(135deg, #60a5fa, #a855f7);
-      color: white;
-      font-weight: 600;
-      margin-top: 6px;
-      box-shadow: 0 6px 16px rgba(59,130,246,0.35);
+    #login-box{
+      width:320px;background:rgba(255,255,255,.97);border-radius:18px;
+      padding:20px 18px 16px;box-shadow:0 10px 28px rgba(148,163,255,.5);
+      border:1px solid #dbeafe;
     }
-    button.ghost {
-      background: transparent;
-      border: 1px solid #fecaca;
-      color: #b91c1c;
-      font-size: 11px;
-      padding-inline: 8px;
+    #login-box h2{font-size:18px;margin-bottom:6px;color:#0f172a;}
+    #login-box p{font-size:12px;color:#6b7280;margin-bottom:10px;}
+    .tag{
+      display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;
+      background:#eef2ff;font-size:11px;color:#4f46e5;margin-left:4px;
     }
-    #rooms-list {
-      max-height: 120px;
-      overflow-y: auto;
+    #inventory-list,#shop-list{flex:1;overflow-y:auto;font-size:12px;color:#4b5563;}
+    .shop-item,.inventory-item{
+      background:#fff;border-radius:8px;border:1px solid #e5e7eb;
+      padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;
     }
-    #rooms-list button {
-      width: 100%;
-      background: #e0f2fe;
-      border-radius: 8px;
-      padding: 5px 8px;
-      border: 1px solid #bfdbfe;
-      margin-bottom: 4px;
-      text-align: left;
-      font-size: 12px;
-      color: #0f172a;
-    }
-    #rooms-list button span {
-      font-size: 11px;
-      color: #64748b;
-      margin-left: 4px;
-    }
-    #plaza-chat, #room-log {
-      height: 100px;
-      overflow-y: auto;
-      background: #f1f5f9;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-      padding: 6px;
-      font-size: 12px;
-    }
-    #plaza-chat p, #room-log p {
-      margin-bottom: 3px;
-    }
-    #plaza-input, #room-input {
-      margin-top: 4px;
-      height: 40px;
-    }
-    #login-screen {
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, #e0f2fe, #fce7f3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 20;
-    }
-    #login-box {
-      width: 320px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 18px;
-      padding: 20px 18px 16px;
-      box-shadow: 0 10px 28px rgba(148,163,255,0.5);
-      border: 1px solid #dbeafe;
-    }
-    #login-box h2 {
-      font-size: 18px;
-      margin-bottom: 6px;
-      color: #1e293b;
-    }
-    #login-box p {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 10px;
-    }
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #eef2ff;
-      font-size: 11px;
-      color: #4f46e5;
-      margin-left: 4px;
-    }
-    #inventory {
-      font-size: 12px;
-      color: #64748b;
+    .shop-item button{
+      border-radius:999px;border:none;background:#4ade80;color:#064e3b;
+      font-size:11px;padding:3px 8px;cursor:pointer;
     }
   </style>
 </head>
@@ -187,61 +105,94 @@
       <h2>플라자 월드 입장</h2>
       <p>닉네임을 정하고 귀여운 광장으로 입장해 보세요 🌈</p>
       <label for="login-name">닉네임</label>
-      <input id="login-name" placeholder="예: 강아지42" />
+      <input id="login-name" placeholder="예: 감자123" />
       <button class="primary" id="login-btn">입장하기</button>
-      <p style="margin-top:8px; font-size:11px; color:#94a3b8;">
-        입장 후에는 광장에서 <b>자유 이동</b> & <b>채팅</b> 가능,<br/>
-        오른쪽 메뉴에서 <b>방 만들기 / 참가 / 인벤토리</b>를 사용할 수 있어요.
+      <p style="margin-top:8px;font-size:11px;color:#94a3b8;">
+        입장 후에는 광장에서 <b>자유 이동 & 채팅</b>을 하고,<br/>
+        우측 상단 메뉴에서 <b>방 / 인벤토리 / 상점</b>을 열 수 있어요.
       </p>
     </div>
   </div>
 
   <div id="game-container">
-    <canvas id="game" width="900" height="540"></canvas>
+    <canvas id="game" width="980" height="560"></canvas>
   </div>
+
   <div id="ui">
     <div>
-      <h1>플라자 월드 <span class="tag">BETA</span></h1>
+      <h1>플라자 월드 <span class="tag">ALPHA</span></h1>
       <div class="sub">
-        방향키로 캐릭터를 움직이고, 광장 채팅으로 대화해 보세요.<br/>
-        방을 만들면 끄투처럼 끝말잇기 게임도 진행할 수 있어요.
+        광장에서 캐릭터를 움직이고, 방에서 끄투 스타일 끝말잇기를 즐겨보세요.
       </div>
       <div id="player-info"></div>
-    </div>
-
-    <div class="section">
-      <h2>방 목록 & 만들기</h2>
-      <div id="rooms-list"></div>
-      <label>방 이름</label>
-      <input id="room-name-input" placeholder="예: 해변 끝말잇기 방" />
-      <button class="primary" id="create-room-btn">새 방 만들기</button>
-    </div>
-
-    <div class="section">
-      <h2>현재 방 / 끝말잇기</h2>
-      <div style="font-size:12px; margin-bottom:4px;">
-        방: <span id="room-title">입장한 방 없음</span>
+      <div id="top-nav">
+        <button data-view="plaza" class="active">광장</button>
+        <button data-view="rooms">방</button>
+        <button data-view="inventory">인벤토리</button>
+        <button data-view="shop">상점</button>
       </div>
-      <div style="font-size:12px; margin-bottom:4px;">
-        마지막 단어: <span id="last-word">-</span><br/>
-        현재 차례: <span id="current-turn">-</span>
+    </div>
+
+    <div id="view-plaza" class="view active">
+      <div class="panel">
+        <h2>광장 채팅</h2>
+        <div id="plaza-chat"></div>
+        <textarea id="plaza-input" placeholder="광장에서 대화하기 (엔터로 전송)"></textarea>
       </div>
-      <button id="start-word-btn" class="primary" style="margin-bottom:4px;">이 방에서 끝말잇기 시작</button>
-      <button id="leave-room-btn" class="ghost" style="display:none;">방 나가기</button>
-      <div id="room-log" style="margin-top:6px;"></div>
-      <textarea id="room-input" placeholder="방 채팅 / 단어 입력 후 엔터"></textarea>
     </div>
 
-    <div class="section">
-      <h2>광장 채팅</h2>
-      <div id="plaza-chat"></div>
-      <textarea id="plaza-input" placeholder="광장에서 대화하기 (엔터로 전송)"></textarea>
+    <div id="view-rooms" class="view">
+      <div class="panel">
+        <h2>방 목록 & 끝말잇기</h2>
+        <div id="rooms-list"></div>
+        <label>방 이름</label>
+        <input id="room-name-input" placeholder="예: 간단 끝말잇기 방" />
+        <button class="primary" id="create-room-btn">새 방 만들기</button>
+
+        <div style="font-size:12px;margin-top:6px;">
+          방: <span id="room-title">입장한 방 없음</span><br/>
+          라운드: <span id="round-info">-</span><br/>
+          남은 시간: <span id="time-left">-</span><br/>
+          마지막 단어: <span id="last-word">-</span><br/>
+          현재 차례: <span id="current-turn">-</span>
+        </div>
+        <button class="primary" id="start-word-btn">이 방에서 끝말잇기 시작</button>
+        <button class="ghost" id="leave-room-btn" style="display:none;">방 나가기</button>
+
+        <div id="room-log"></div>
+        <textarea id="room-input" placeholder="단어 또는 방 채팅 입력 후 엔터"></textarea>
+      </div>
     </div>
 
-    <div class="section">
-      <h2>인벤토리</h2>
-      <div id="inventory">
-        아직 아이템이 없습니다. 나중에 낚싯대, 모자, 의상 같은 걸 넣을 수 있어요 🎒
+    <div id="view-inventory" class="view">
+      <div class="panel">
+        <h2>인벤토리</h2>
+        <div id="inventory-list">
+          아직 아이템이 없습니다. 추후 포인트로 모자/의상/이펙트를 구매해 보관할 수 있어요 🎒
+        </div>
+      </div>
+    </div>
+
+    <div id="view-shop" class="view">
+      <div class="panel">
+        <h2>상점</h2>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">
+          아직은 목업입니다. 게임에서 얻은 포인트로 아이템을 살 수 있도록 연동할 수 있어요 💰
+        </div>
+        <div id="shop-list">
+          <div class="shop-item">
+            <div>기본 모자 <span style="color:#9ca3af;">(장식용)</span></div>
+            <button>구매 100P</button>
+          </div>
+          <div class="shop-item">
+            <div>해변 튜브 이펙트</div>
+            <button>구매 200P</button>
+          </div>
+          <div class="shop-item">
+            <div>반짝이 말풍선</div>
+            <button>구매 150P</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

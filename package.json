@@ -1,11 +1,10 @@
+
 {
-  "name": "plaza-world",
+  "name": "plaza-world-full",
   "version": "1.0.0",
-  "description": "로그인 + 플라자 맵 + 방 + 끝말잇기 기본 구조",
+  "description": "로그인 + 플라자 + 말풍선 + 방/끝말잇기 + 상점/인벤토리 UI",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
+  "scripts": { "start": "node server.js" },
   "dependencies": {
     "express": "^4.19.0",
     "socket.io": "^4.7.5"
