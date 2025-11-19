@@ -1,7 +1,7 @@
 {
-  "name": "room-map-world",
+  "name": "plaza-world",
   "version": "1.0.0",
-  "description": "방 + 여러 맵 + SD 캐릭터 + 끝말잇기",
+  "description": "로그인 + 플라자 맵 + 방 + 끝말잇기 기본 구조",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
