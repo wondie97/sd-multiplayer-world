@@ -2,223 +2,197 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>방 월드 (야채부락리 느낌)</title>
+  <title>플라자 월드</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #05070d;
-      color: #f5f5ff;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      display: flex;
       height: 100vh;
+      display: flex;
+      background: linear-gradient(135deg,#fef9c3 0%,#e0f2fe 40%,#fee2f2 100%);
+      color: #111827;
       overflow: hidden;
     }
-    #game-container {
-      flex: 2;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at top, #1d2434 0, #05060a 60%);
+    #game-container{
+      flex:2.2;display:flex;align-items:center;justify-content:center;padding:16px;
     }
-    canvas {
-      border-radius: 12px;
-      border: 2px solid #303545;
-      background: #141824;
-      box-shadow: 0 0 24px rgba(0,0,0,0.6);
+    canvas{
+      border-radius:18px;border:2px solid #bfdbfe;background:#f8fafc;
+      box-shadow:0 12px 32px rgba(148,163,255,.4);
     }
-    #ui {
-      flex: 1.2;
-      display: flex;
-      flex-direction: column;
-      padding: 14px;
-      gap: 10px;
-      background: #070914;
-      border-left: 1px solid #262a3e;
-      font-size: 13px;
+    #ui{
+      flex:1.1;display:flex;flex-direction:column;padding:14px 16px;gap:10px;
+      background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+      border-left:1px solid #e5e7eb;
     }
-    h1 {
-      font-size: 18px;
-      margin-bottom: 4px;
+    h1{font-size:20px;margin-bottom:4px;color:#0f172a;}
+    .sub{font-size:11px;color:#6b7280;}
+    #player-info{margin-top:4px;font-size:12px;color:#4b5563;}
+    #top-nav{display:flex;justify-content:flex-end;gap:6px;margin-top:6px;}
+    #top-nav button{
+      border-radius:999px;padding:4px 10px;font-size:11px;border:1px solid #d1d5db;
+      background:#f3f4ff;color:#4b5563;cursor:pointer;
     }
-    .section {
-      border-radius: 10px;
-      background: #151823;
-      padding: 8px 10px;
-      border: 1px solid #262a3e;
+    #top-nav button.active{
+      background:linear-gradient(135deg,#60a5fa,#a855f7);
+      color:#fff;border-color:transparent;
+      box-shadow:0 4px 10px rgba(59,130,246,.35);
     }
-    .section h2 {
-      font-size: 14px;
-      margin-bottom: 4px;
+    .view{display:none;flex:1;min-height:0;}
+    .view.active{display:block;}
+    .panel{
+      background:#f9fafb;border-radius:12px;border:1px solid #e5e7eb;
+      padding:10px 12px;height:100%;display:flex;flex-direction:column;gap:6px;
     }
-    #player-name {
-      font-size: 12px;
-      color: #a3b0ff;
-      margin-bottom: 4px;
+    .panel h2{font-size:14px;color:#111827;}
+    label{display:block;font-size:12px;margin-top:4px;margin-bottom:2px;color:#4b5563;}
+    input,textarea{
+      width:100%;border-radius:8px;border:1px solid #d1d5db;background:#fff;
+      color:#111827;padding:5px 8px;font-size:12px;
     }
-    #rooms-list {
-      max-height: 120px;
-      overflow-y: auto;
-      background: #05060a;
-      border-radius: 8px;
-      padding: 6px;
-      border: 1px solid #262a3e;
+    textarea{resize:none;}
+    button.primary{
+      margin-top:6px;width:100%;border-radius:999px;border:none;padding:6px 10px;
+      font-size:13px;cursor:pointer;background:linear-gradient(135deg,#60a5fa,#a855f7);
+      color:#fff;font-weight:600;box-shadow:0 6px 16px rgba(59,130,246,.35);
     }
-    #rooms-list button {
-      width: 100%;
-      background: #1e2538;
-      border: 1px solid #343a56;
-      color: #d8ddff;
-      border-radius: 6px;
-      padding: 4px 6px;
-      text-align: left;
-      font-size: 12px;
-      margin-bottom: 4px;
-      cursor: pointer;
+    button.ghost{
+      border-radius:999px;border:1px solid #fecaca;background:transparent;
+      color:#b91c1c;font-size:11px;padding:4px 8px;cursor:pointer;
     }
-    #rooms-list button span {
-      color: #91ffb8;
-      font-size: 11px;
-      margin-left: 4px;
+    #plaza-chat,#room-log{
+      flex:1;overflow-y:auto;background:#f3f4ff;border-radius:8px;
+      border:1px solid #e5e7eb;padding:6px;font-size:12px;
     }
-    label {
-      display: block;
-      font-size: 12px;
-      margin-top: 4px;
-      margin-bottom: 2px;
+    #plaza-chat p,#room-log p{margin-bottom:3px;}
+    #rooms-list{max-height:100px;overflow-y:auto;}
+    #rooms-list button{
+      width:100%;border-radius:8px;border:1px solid #bfdbfe;background:#e0f2fe;
+      padding:5px 8px;text-align:left;font-size:12px;margin-bottom:4px;
+      color:#0f172a;cursor:pointer;
     }
-    input, select, textarea {
-      width: 100%;
-      border-radius: 6px;
-      border: 1px solid #303545;
-      background: #05060a;
-      color: #fff;
-      padding: 4px 6px;
-      font-size: 12px;
+    #rooms-list button span{font-size:11px;color:#6b7280;margin-left:4px;}
+    #login-screen{
+      position:fixed;inset:0;background:linear-gradient(135deg,#e0f2fe,#fee2f2);
+      display:flex;align-items:center;justify-content:center;z-index:20;
     }
-    button.primary {
-      margin-top: 6px;
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid #3c82ff;
-      background: linear-gradient(135deg, #4f8dff, #7b5bff);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-      padding: 6px 8px;
-      cursor: pointer;
+    #login-box{
+      width:320px;background:rgba(255,255,255,.97);border-radius:18px;
+      padding:20px 18px 16px;box-shadow:0 10px 28px rgba(148,163,255,.5);
+      border:1px solid #dbeafe;
     }
-    #chat-messages, #log {
-      height: 110px;
-      overflow-y: auto;
-      background: #05060a;
-      border-radius: 8px;
-      padding: 6px;
-      font-size: 12px;
-      border: 1px solid #262a3e;
+    #login-box h2{font-size:18px;margin-bottom:6px;color:#0f172a;}
+    #login-box p{font-size:12px;color:#6b7280;margin-bottom:10px;}
+    .tag{
+      display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;
+      background:#eef2ff;font-size:11px;color:#4f46e5;margin-left:4px;
     }
-    #chat-messages p, #log p {
-      margin-bottom: 3px;
+    #inventory-list,#shop-list{flex:1;overflow-y:auto;font-size:12px;color:#4b5563;}
+    .shop-item,.inventory-item{
+      background:#fff;border-radius:8px;border:1px solid #e5e7eb;
+      padding:6px 8px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;
     }
-    #chat-input, #word-input {
-      height: 40px;
-      resize: none;
-      margin-top: 4px;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: #1c2135;
-      font-size: 11px;
-      color: #c6d0ff;
-    }
-    .pill span {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-    }
-    #room-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    #room-players {
-      font-size: 11px;
-      color: #b8c1ff;
-    }
-    #word-info {
-      font-size: 12px;
-      color: #d0d4ff;
-    }
-    #leave-room-btn {
-      border-radius: 999px;
-      border: 1px solid #ff6b6b;
-      background: transparent;
-      color: #ffabab;
-      font-size: 11px;
-      padding: 2px 8px;
-      cursor: pointer;
+    .shop-item button{
+      border-radius:999px;border:none;background:#4ade80;color:#064e3b;
+      font-size:11px;padding:3px 8px;cursor:pointer;
     }
   </style>
 </head>
 <body>
-  <div id="game-container">
-    <canvas id="game" width="800" height="450"></canvas>
+  <div id="login-screen">
+    <div id="login-box">
+      <h2>플라자 월드 입장</h2>
+      <p>닉네임을 정하고 귀여운 광장으로 입장해 보세요 🌈</p>
+      <label for="login-name">닉네임</label>
+      <input id="login-name" placeholder="예: 감자123" />
+      <button class="primary" id="login-btn">입장하기</button>
+      <p style="margin-top:8px;font-size:11px;color:#94a3b8;">
+        입장 후에는 광장에서 <b>자유 이동 & 채팅</b>을 하고,<br/>
+        우측 상단 메뉴에서 <b>방 / 인벤토리 / 상점</b>을 열 수 있어요.
+      </p>
+    </div>
   </div>
+
+  <div id="game-container">
+    <canvas id="game" width="980" height="560"></canvas>
+  </div>
+
   <div id="ui">
     <div>
-      <h1>방 월드</h1>
-      <div id="player-name"></div>
-      <div style="font-size:11px; color:#9ea4c7;">
-        로비에서 방을 만들거나 입장하세요.<br/>
-        방 안에서는 방향키로 이동, 채팅/끝말잇기 가능!
+      <h1>플라자 월드 <span class="tag">ALPHA</span></h1>
+      <div class="sub">
+        광장에서 캐릭터를 움직이고, 방에서 끄투 스타일 끝말잇기를 즐겨보세요.
+      </div>
+      <div id="player-info"></div>
+      <div id="top-nav">
+        <button data-view="plaza" class="active">광장</button>
+        <button data-view="rooms">방</button>
+        <button data-view="inventory">인벤토리</button>
+        <button data-view="shop">상점</button>
       </div>
     </div>
 
-    <div class="section">
-      <h2>로비 - 방 목록</h2>
-      <div id="rooms-list"></div>
-      <label>방 이름</label>
-      <input id="room-name-input" placeholder="예: 해변 끝말잇기 방" />
-      <label>맵 선택</label>
-      <select id="room-map-select">
-        <option value="village">마을 광장</option>
-        <option value="beach">해변</option>
-        <option value="forest">숲 캠프</option>
-      </select>
-      <button class="primary" id="create-room-btn">새 방 만들기</button>
+    <div id="view-plaza" class="view active">
+      <div class="panel">
+        <h2>광장 채팅</h2>
+        <div id="plaza-chat"></div>
+        <textarea id="plaza-input" placeholder="광장에서 대화하기 (엔터로 전송)"></textarea>
+      </div>
     </div>
 
-    <div class="section">
-      <div id="room-header">
-        <div>
-          <div style="font-size:13px; font-weight:600;" id="room-title">방에 입장하지 않았습니다</div>
-          <div id="room-players"></div>
+    <div id="view-rooms" class="view">
+      <div class="panel">
+        <h2>방 목록 & 끝말잇기</h2>
+        <div id="rooms-list"></div>
+        <label>방 이름</label>
+        <input id="room-name-input" placeholder="예: 간단 끝말잇기 방" />
+        <button class="primary" id="create-room-btn">새 방 만들기</button>
+
+        <div style="font-size:12px;margin-top:6px;">
+          방: <span id="room-title">입장한 방 없음</span><br/>
+          라운드: <span id="round-info">-</span><br/>
+          남은 시간: <span id="time-left">-</span><br/>
+          마지막 단어: <span id="last-word">-</span><br/>
+          현재 차례: <span id="current-turn">-</span>
         </div>
-        <button id="leave-room-btn" style="display:none;">방 나가기</button>
+        <button class="primary" id="start-word-btn">이 방에서 끝말잇기 시작</button>
+        <button class="ghost" id="leave-room-btn" style="display:none;">방 나가기</button>
+
+        <div id="room-log"></div>
+        <textarea id="room-input" placeholder="단어 또는 방 채팅 입력 후 엔터"></textarea>
       </div>
-      <div id="word-info">
-        마지막 단어: <span id="last-word">-</span><br/>
-        현재 차례: <span id="current-turn">-</span>
-      </div>
-      <button class="primary" id="start-word-btn" style="margin-top:6px;">이 방에서 끝말잇기 시작</button>
     </div>
 
-    <div class="section">
-      <h2>채팅</h2>
-      <div id="chat-messages"></div>
-      <textarea id="chat-input" placeholder="엔터로 전송, Shift+Enter 줄바꿈"></textarea>
+    <div id="view-inventory" class="view">
+      <div class="panel">
+        <h2>인벤토리</h2>
+        <div id="inventory-list">
+          아직 아이템이 없습니다. 추후 포인트로 모자/의상/이펙트를 구매해 보관할 수 있어요 🎒
+        </div>
+      </div>
     </div>
 
-    <div class="section">
-      <h2>끝말잇기 입력</h2>
-      <textarea id="word-input" placeholder="단어를 입력 후 엔터"></textarea>
-      <div id="log" style="margin-top:6px;"></div>
+    <div id="view-shop" class="view">
+      <div class="panel">
+        <h2>상점</h2>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">
+          아직은 목업입니다. 게임에서 얻은 포인트로 아이템을 살 수 있도록 연동할 수 있어요 💰
+        </div>
+        <div id="shop-list">
+          <div class="shop-item">
+            <div>기본 모자 <span style="color:#9ca3af;">(장식용)</span></div>
+            <button>구매 100P</button>
+          </div>
+          <div class="shop-item">
+            <div>해변 튜브 이펙트</div>
+            <button>구매 200P</button>
+          </div>
+          <div class="shop-item">
+            <div>반짝이 말풍선</div>
+            <button>구매 150P</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
