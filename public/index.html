@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>SD 멀티플레이 월드</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #101318;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      flex: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1f2634 0, #05060a 60%);
+    }
+    canvas {
+      border-radius: 12px;
+      border: 2px solid #303545;
+      background: #1f2530;
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    #ui {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #080a10;
+      border-left: 1px solid #252839;
+    }
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .section {
+      border-radius: 10px;
+      background: #151823;
+      padding: 10px;
+      border: 1px solid #262a3e;
+      font-size: 13px;
+    }
+    .section h2 { font-size: 14px; margin-bottom: 4px; }
+    #log {
+      height: 140px;
+      overflow-y: auto;
+      background: #05060a;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      border: 1px solid #262a3e;
+    }
+    #log p { margin-bottom: 4px; }
+    #word-game textarea {
+      width: 100%;
+      height: 40px;
+      margin-top: 6px;
+      resize: none;
+      background: #05060a;
+      color: #fff;
+      border-radius: 6px;
+      border: 1px solid #303545;
+      padding: 4px;
+      font-size: 13px;
+    }
+    button {
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid #3c82ff;
+      background: #2c5fff;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    #player-info { font-size: 12px; color: #aab3ff; }
+    .highlight { color: #ffd93b; }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game" width="800" height="450"></canvas>
+  </div>
+
+  <div id="ui">
+    <div>
+      <h1>SD 멀티플레이 월드</h1>
+      <div id="player-info"></div>
+      <div style="font-size:12px; margin-top:4px; color:#9ea4c7;">
+        이동: 방향키 / 낚시: <span class="highlight">F</span><br />
+        끝말잇기 시작: 오른쪽 아래 버튼<br />
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>현재 상태</h2>
+      <div id="status-text">대기 중...</div>
+    </div>
+
+    <div class="section">
+      <h2>로그</h2>
+      <div id="log"></div>
+    </div>
+
+    <div id="word-game" class="section">
+      <h2>끝말잇기</h2>
+      <div style="font-size:12px; color:#c0c4e8;">
+        <div>마지막 단어: <span id="last-word">없음</span></div>
+        <div>현재 차례: <span id="current-turn">없음</span></div>
+      </div>
+      <textarea id="word-input" placeholder="여기에 단어 입력 후 엔터"></textarea>
+      <button id="btn-start-word">끝말잇기 시작</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
