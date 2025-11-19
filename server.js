@@ -1,10 +1,47 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
+const db = require("./db");   
+const crypto = require("crypto");
 
+const loginTokens = new Map(); // token -> { userId, nickname }
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+app.use(express.json());
+
+// 회원가입
+app.post("/api/signup", (req, res) => {
+  const { username, password, nickname } = req.body;
+  if (!username || !password || !nickname) {
+    return res.status(400).json({ ok: false, message: "필수 항목이 누락되었습니다." });
+  }
+  try {
+    const userId = db.createUser(username, password, nickname);
+    return res.json({ ok: true, userId });
+  } catch (e) {
+    if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+      return res.status(400).json({ ok: false, message: "이미 존재하는 아이디입니다." });
+    }
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "서버 오류" });
+  }
+});
+
+// 로그인
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+  const user = db.getUserByUsername(username);
+  if (!user) {
+    return res.status(400).json({ ok: false, message: "아이디 또는 비밀번호가 잘못되었습니다." });
+  }
+  if (!db.checkPassword(user, password)) {
+    return res.status(400).json({ ok: false, message: "아이디 또는 비밀번호가 잘못되었습니다." });
+  }
+  const token = crypto.randomBytes(16).toString("hex");
+  loginTokens.set(token, { userId: user.id, nickname: user.nickname });
+  return res.json({ ok: true, token, nickname: user.nickname });
+});
 
 app.use(express.static("public"));
 
@@ -62,40 +99,44 @@ function isValidKoreanWord(word) {
 }
 
 io.on("connection", (socket) => {
-  console.log("connected:", socket.id);
   socket.data.user = null;
   socket.data.roomId = null;
 
-  // 로그인
-  socket.on("login", (nameRaw) => {
-    if (socket.data.user) return;
-    let name = (nameRaw || "").toString().trim();
-    if (!name) name = "손님";
-    const userId = makeUserId();
+  // 기존 login 이벤트 → loginWithToken 으로 교체
+  socket.on("loginWithToken", (token) => {
+    const session = loginTokens.get(token);
+    if (!session) return;
+    const { userId, nickname } = session;
 
-    socket.data.user = { socketId: socket.id, userId, name };
+    socket.data.user = {
+      socketId: socket.id,
+      userId,
+      name: nickname,
+      avatarKey: "default"  // 나중에 상점에서 바꿀 수 있게
+    };
 
     plaza.players[socket.id] = {
       id: socket.id,
       userId,
-      name,
+      name: nickname,
+      avatarKey: "default",
       x: 600,
       y: 600,
       facing: "down",
       state: "idle"
     };
-    socket.join("plaza");
 
+    socket.join("plaza");
     socket.emit("loginSuccess", {
       selfId: socket.id,
       userId,
-      name,
+      name: nickname,
       plaza: serializePlaza(),
       rooms: serializeRooms()
     });
-
     socket.to("plaza").emit("plazaJoin", plaza.players[socket.id]);
   });
+
 
   // 광장 이동
   socket.on("plazaMove", ({ x, y, facing, state }) => {
