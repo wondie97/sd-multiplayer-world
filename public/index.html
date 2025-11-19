@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>방 월드 (야채부락리 느낌)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #05070d;
+      color: #f5f5ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      flex: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1d2434 0, #05060a 60%);
+    }
+    canvas {
+      border-radius: 12px;
+      border: 2px solid #303545;
+      background: #141824;
+      box-shadow: 0 0 24px rgba(0,0,0,0.6);
+    }
+    #ui {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 10px;
+      background: #070914;
+      border-left: 1px solid #262a3e;
+      font-size: 13px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .section {
+      border-radius: 10px;
+      background: #151823;
+      padding: 8px 10px;
+      border: 1px solid #262a3e;
+    }
+    .section h2 {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    #player-name {
+      font-size: 12px;
+      color: #a3b0ff;
+      margin-bottom: 4px;
+    }
+    #rooms-list {
+      max-height: 120px;
+      overflow-y: auto;
+      background: #05060a;
+      border-radius: 8px;
+      padding: 6px;
+      border: 1px solid #262a3e;
+    }
+    #rooms-list button {
+      width: 100%;
+      background: #1e2538;
+      border: 1px solid #343a56;
+      color: #d8ddff;
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: left;
+      font-size: 12px;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    #rooms-list button span {
+      color: #91ffb8;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+    input, select, textarea {
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #303545;
+      background: #05060a;
+      color: #fff;
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+    button.primary {
+      margin-top: 6px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #3c82ff;
+      background: linear-gradient(135deg, #4f8dff, #7b5bff);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 8px;
+      cursor: pointer;
+    }
+    #chat-messages, #log {
+      height: 110px;
+      overflow-y: auto;
+      background: #05060a;
+      border-radius: 8px;
+      padding: 6px;
+      font-size: 12px;
+      border: 1px solid #262a3e;
+    }
+    #chat-messages p, #log p {
+      margin-bottom: 3px;
+    }
+    #chat-input, #word-input {
+      height: 40px;
+      resize: none;
+      margin-top: 4px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #1c2135;
+      font-size: 11px;
+      color: #c6d0ff;
+    }
+    .pill span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+    #room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    #room-players {
+      font-size: 11px;
+      color: #b8c1ff;
+    }
+    #word-info {
+      font-size: 12px;
+      color: #d0d4ff;
+    }
+    #leave-room-btn {
+      border-radius: 999px;
+      border: 1px solid #ff6b6b;
+      background: transparent;
+      color: #ffabab;
+      font-size: 11px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game" width="800" height="450"></canvas>
+  </div>
+  <div id="ui">
+    <div>
+      <h1>방 월드</h1>
+      <div id="player-name"></div>
+      <div style="font-size:11px; color:#9ea4c7;">
+        로비에서 방을 만들거나 입장하세요.<br/>
+        방 안에서는 방향키로 이동, 채팅/끝말잇기 가능!
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>로비 - 방 목록</h2>
+      <div id="rooms-list"></div>
+      <label>방 이름</label>
+      <input id="room-name-input" placeholder="예: 해변 끝말잇기 방" />
+      <label>맵 선택</label>
+      <select id="room-map-select">
+        <option value="village">마을 광장</option>
+        <option value="beach">해변</option>
+        <option value="forest">숲 캠프</option>
+      </select>
+      <button class="primary" id="create-room-btn">새 방 만들기</button>
+    </div>
+
+    <div class="section">
+      <div id="room-header">
+        <div>
+          <div style="font-size:13px; font-weight:600;" id="room-title">방에 입장하지 않았습니다</div>
+          <div id="room-players"></div>
+        </div>
+        <button id="leave-room-btn" style="display:none;">방 나가기</button>
+      </div>
+      <div id="word-info">
+        마지막 단어: <span id="last-word">-</span><br/>
+        현재 차례: <span id="current-turn">-</span>
+      </div>
+      <button class="primary" id="start-word-btn" style="margin-top:6px;">이 방에서 끝말잇기 시작</button>
+    </div>
+
+    <div class="section">
+      <h2>채팅</h2>
+      <div id="chat-messages"></div>
+      <textarea id="chat-input" placeholder="엔터로 전송, Shift+Enter 줄바꿈"></textarea>
+    </div>
+
+    <div class="section">
+      <h2>끝말잇기 입력</h2>
+      <textarea id="word-input" placeholder="단어를 입력 후 엔터"></textarea>
+      <div id="log" style="margin-top:6px;"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
